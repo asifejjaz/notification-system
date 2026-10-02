@@ -26,3 +26,10 @@ I asked the planning session whether v1 was good enough to extract the requireme
 6. **An output file and a stopping point.** v2 saves the result to a file that can be committed, and stops before design.
 
 v2 also adds a coverage check: every sentence in the brief that sets an expectation must map to an ID.
+
+## Result
+
+- Output: [docs/requirements.md](../../requirements.md), status PROPOSED. It has 46 requirements, 29 assumptions, 8 open decisions and 6 out-of-scope items.
+- The result came from the v2 prompt alone. I sent no follow-up messages.
+- Three assumptions are flagged as worth raising with the hiring contact: A1 (the `Notification` class is not attached), A3 (no language is named) and A4 (no deadline or submission step).
+- Next: I review the assumptions and decisions. The confirmed version is a separate commit, so the diff shows what I changed.
