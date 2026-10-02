@@ -1,5 +1,7 @@
 # Step 01: Requirements analysis (prompt v1)
 
+**Status:** not run. [Prompt v2](prompt-v2.md) replaced it, and the [step README](README.md) explains why.
+
 ```text
 I'm doing a hiring coding challenge. The full text of the challenge is in the
 PDF file C:\Users\HP\Documents\Career\coding challenge\Coding Challenge.pdf
