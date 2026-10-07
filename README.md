@@ -14,6 +14,8 @@ Docker is the only prerequisite.
 | Run the demo | `./run.sh` | `run.cmd` | `docker run --rm notification-system` |
 | Run the tests | `./test.sh` | `test.cmd` | `docker run --rm notification-system python -m unittest discover -s tests -v` |
 
+The build compiles every module (`python -m compileall`), so it fails on a syntax error instead of at the first run.
+
 **Without Docker:** on Python 3.10 or later, from the repo root. There is nothing to install.
 
 ```sh
