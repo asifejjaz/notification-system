@@ -1,12 +1,18 @@
 # Architecture: real-time notification system
 
-**Version 1.0. Status: PROPOSED (2026-10-07).** Nothing here is confirmed, and no code should be written from it until it is. It builds on [requirements.md](requirements.md) version 1.1 and uses its IDs. New IDs in this file: AD1 to AD8, the architecture decisions.
+**Version 1.1. Status: CONFIRMED (2026-10-07).** I reviewed version 1.0 and approved it, with four changes from the planning session's review. Code can be written from this version. It builds on [requirements.md](requirements.md) version 1.1 and uses its IDs. New IDs in this file: AD1 to AD11, the architecture decisions.
+
+| Version | Date | What changed |
+|---|---|---|
+| 1.0 | 2026-10-07 | The architecture as the AI proposed it from the step 02 prompt v1.2. |
+| 1.1 | 2026-10-07 | My approval, from prompt v1.3. AD1 to AD8 and every recommendation in section 9 are confirmed. Added AD9 (several rules per event type), AD10 (failure isolation) and AD11 (scripts that work on a reviewer's machine). The Game row now says that `game_id` is not built. |
 
 What this design does to the requirements:
 
 - It changes no PROPOSED assumption.
 - It confirms the proposal inside A7: preferences are checked before the `Notification` is created (AD3).
 - It settles three details that version 1.1 left to this step: the `Notification` fields (A1) and the item attribute (A10) in section 4, and the Docker commands (D2) in section 9.
+- It closes D1, D3, D4, D5, D6 and D8, and the naming question in A8 (section 9). `requirements.md` is not edited again.
 
 Status words used below: **BUILT** is real code in today's build. **SIMULATED** is built as a small in-memory stand-in for something the platform owns (N2, N5). **EXTENSION** is a seam the design leaves open. It is not built.
 
@@ -15,7 +21,7 @@ Status words used below: **BUILT** is real code in today's build. **SIMULATED** 
 The system is event-driven and runs in one process.
 
 1. `GameEngine` and `SocialSystem`, both simulated, turn each trigger into an event object and publish it on an event bus.
-2. `NotificationService` subscribes to the bus. For each event it finds the rule registered for that event class. The rule fixes the notification type and its category.
+2. `NotificationService` subscribes to the bus. For each event it finds the rules registered for that event class, one per event type today (AD9). A rule fixes the notification type and its category.
 3. The service asks the rule who the recipient is and checks that player's preference for the category.
 4. If the category is enabled, the rule creates the `Notification`, looking up names and items through interfaces.
 5. The service sends it through each configured channel. Only the simulated in-app channel is built.
@@ -66,20 +72,25 @@ In priority order.
 | AD6 | Storage | A database now. In-memory stores behind the interfaces. | In-memory. A23 stands (R30). | The brief allows a simple dictionary or map, and nothing has to survive a restart. | Nothing is kept. Section 6 gives the schema the stores would map to. |
 | AD7 | Delivery | Print straight from the service. A `NotificationChannel` interface. | The interface. The service holds a list of channels with one entry, `InAppChannel` (R24). | The client is an outside dependency that the brief says can be mocked (R45). A list makes a second channel one new class and one line of wiring. | A loop over one element today. |
 | AD8 | Types and categories | Free strings. Enums. | Enums. Each `NotificationType` carries its `Category` (A6, A17). | A misspelt type or category cannot exist, and the category check needs no extra table. | Adding one is a code change, not configuration. |
+| AD9 | Rules per event type | Exactly one rule per event class. A list of rules per event class. | A list. Each event type has one rule today. | One event can then produce a second notification, for example to the other player, by adding a rule. The service does not change. | The service loops over one element today. |
+| AD10 | When a subscriber or a channel fails | Let the error reach the caller. Catch it and log it. | The bus catches and logs an error from a subscriber. The service catches and logs an error from a channel and still runs the next one. | A notification failure must never break the game or social system that emitted the event, and one channel must not block another. | A bug shows up in the log, not as a crash, so tests check what was sent and what was logged. |
+| AD11 | Scripts on a reviewer's machine | Scripts as written on Windows. Scripts made portable. | A `.gitattributes` keeps `.sh` files on Unix line endings, the `.sh` files are marked executable in git, and the README gives a fallback without Docker: `python -m notification_system` on Python 3.10 or later. | The reviewers clone and run the repo (R8), and the project is written on Windows. | Three small extra things to keep right. |
+
+AD1 to AD8 were approved as proposed. AD9 to AD11 were added in version 1.1.
 
 ## 4. Entities
 
 | Entity | Purpose | Main attributes | Relationships | Status |
 |---|---|---|---|---|
 | Player | A user of the platform. Receives notifications and appears by name in other players' messages (A12). | `id: int`, `display_name: str` | Has preferences, receives notifications, acts in events. | SIMULATED. `PlayerDirectory` maps id to name. No `Player` class is needed yet. |
-| Game | One of the platform's games. | `id: str`, `name: str` | Would own events through a `game_id` on `Event`. | EXTENSION. **Conflict with A27: A27 stands.** No trigger carries a game, so the field would be a value nobody sets. The seam is an optional `game_id` on `Event`. |
+| Game | One of the platform's games. | `id: str`, `name: str` | Would own events through a `game_id` on `Event`. | EXTENSION. **Conflict with A27: A27 stands.** No trigger carries a game, so the field would be a value nobody sets. The seam would be an optional `game_id` on `Event`. No such field is built. |
 | Game engine | Stand-in for the part of the platform that emits game events (A8, N5). | `bus: EventBus` | Publishes `PlayerLeveledUp`, `ItemAcquired`, `ChallengeCompleted`. Knows nothing about notifications. | SIMULATED |
 | Social system | Stand-in for the part that emits social events. | `bus: EventBus` | Publishes `FriendRequestSent`, `FriendRequestAccepted`, `FollowerAdded`. | SIMULATED |
 | Event | An immutable fact from the platform. One frozen dataclass per event type. | `PlayerLeveledUp(user_id: int, level: int)`<br>`ItemAcquired(user_id: int, item_id: str)`<br>`ChallengeCompleted(user_id: int, challenge_id: str)`<br>`FriendRequestSent(sender_id: int, recipient_id: int)`<br>`FriendRequestAccepted(accepter_id: int, requester_id: int)`<br>`FollowerAdded(follower_id: int, followed_id: int)` | Published by an emitter, carried by the bus, matched to one rule by its class. | BUILT. The two PvP events are an EXTENSION (D4). |
-| Event bus | Carries events from emitters to subscribers (R35, R36). | `subscribers: dict[type[Event], list[Callable]]` | Emitters publish. `NotificationService` subscribes. | BUILT, synchronous (AD2) |
+| Event bus | Carries events from emitters to subscribers (R35, R36). | `subscribers: dict[type[Event], list[Callable]]` | Emitters publish. `NotificationService` subscribes. | BUILT, synchronous (AD2). It catches and logs a subscriber's error (AD10). |
 | Queue | Would buffer events between emitters and the service. | Not designed in detail. | Would sit behind `EventBus`. | EXTENSION. **Conflict with A26: A26 stands.** The synchronous bus already meets A21, and a queue raises ordering, retry and duplicate questions that A24 says are not built. The seam is the `EventBus` interface. |
-| Notification rule | Everything specific to one event type: its notification type, who receives it, whether it qualifies, and the text. | `event_type: type[Event]`, `notification_type: NotificationType` | One per event type. Uses the lookups. Creates the `Notification`. | BUILT, six rules |
-| Notification service | Runs the same dispatch steps for every event (R38 to R41). | `rules: dict[type[Event], NotificationRule]`, `preferences: PreferenceStore`, `channels: list[NotificationChannel]` | Subscribed to the bus. Uses rules, preferences and channels. | BUILT |
+| Notification rule | Everything specific to one event type: its notification type, who receives it, whether it qualifies, and the text. | `event_type: type[Event]`, `notification_type: NotificationType` | One or more per event type, one each today (AD9). Uses the lookups. Creates the `Notification`. | BUILT, six rules |
+| Notification service | Runs the same dispatch steps for every event (R38 to R41). | `rules: dict[type[Event], list[NotificationRule]]`, `preferences: PreferenceStore`, `channels: list[NotificationChannel]` | Subscribed to the bus. Uses rules, preferences and channels. | BUILT |
 | Notification | The message for one player. The project's own basic class (A1). | `recipient_id: int`, `type: NotificationType`, `message: str`, `created_at: datetime`. `category` is read from `type`. | Created by a rule, sent by a channel. | BUILT |
 | Notification type | Names the kind of notification (R38, A6). | Enum: `LEVEL_UP`, `ITEM_ACQUIRED`, `CHALLENGE_COMPLETED`, `FRIEND_REQUEST`, `FRIEND_ACCEPTED`, `NEW_FOLLOWER`. Each has `category: Category`. | Belongs to exactly one category. | BUILT |
 | Category | What a player can switch on or off (R29, A17). | Enum: `GAME_EVENTS` labelled "Game Events", `SOCIAL_EVENTS` labelled "Social Events". | Groups notification types. Keys preferences. | BUILT |
@@ -94,11 +105,11 @@ In priority order.
 |---|---|---|---|---|
 | 1 | `bootstrap.build_app()` | Creates the stores, bus, rules, channel and service, and subscribes the service for every rule's event class | `EventBus` | The system is ready. Nothing is wired anywhere else. |
 | 2 | Demo or test | Calls a trigger, for example `playerLeveledUp(1, 15)` | `GameEngine` or `SocialSystem` | The stand-in builds the matching event. |
-| 3 | `GameEngine`, `SocialSystem` | Publish the event | `EventBus` | The bus calls every subscriber of that event class, in order, before `publish` returns (A21). |
-| 4 | `EventBus` | Passes the event | `NotificationService.handle` | The service picks the rule for the event's class. That fixes the type and the category (R38). An event with no rule is ignored. |
+| 3 | `GameEngine`, `SocialSystem` | Publish the event | `EventBus` | The bus calls every subscriber of that event class, in order, before `publish` returns (A21). A subscriber's error is caught and logged (AD10). |
+| 4 | `EventBus` | Passes the event | `NotificationService.handle` | The service picks the rules for the event's class and runs steps 5 to 7 for each one (AD9). A rule fixes the type and the category (R38). An event with no rule is ignored. |
 | 5 | `NotificationService` | Asks for the recipient, then asks whether the category is enabled | The rule, then `PreferenceStore` | Disabled: the event is dropped and logged as skipped (A20). Enabled: step 6 (R40). |
 | 6 | `NotificationService` | Asks for the notification | The rule | The rule looks up what the text needs and returns a `Notification` (R39). It returns nothing if the event does not qualify: an item below `RARE`, or an unknown item (A10, A25). |
-| 7 | `NotificationService` | Sends the notification | Each `NotificationChannel` | `InAppChannel` prints it and records it (R41, R45). The outcome is logged. |
+| 7 | `NotificationService` | Sends the notification | Each `NotificationChannel` | `InAppChannel` prints it and records it (R41, R45). The outcome is logged. A channel that fails is logged, and the next one still runs (AD10). |
 | 8 | Demo or test, standing in for a player | Switches a category off or on | `PreferenceStore` | Later events in that category follow the new setting (R29, A19). |
 
 `socialSystem.friendRequestSent(3, 1)`, with both outcomes. Cyra is the sample name of user 3.
@@ -212,6 +223,7 @@ erDiagram
 notification-system/
 ├── Dockerfile                  python:3.13-slim; the default command runs the demo
 ├── build, run, test scripts    one line each, as .sh and .cmd (section 9, D2)
+├── .gitattributes              keeps .sh files on Unix line endings (AD11)
 ├── README.md
 ├── notification_system/
 │   ├── domain.py               Category, NotificationType, Notification, Rarity, Item, Challenge
@@ -276,6 +288,7 @@ None of these is built. Each row is the answer to "what would it take".
 | Scenario | What changes | What stays untouched |
 |---|---|---|
 | A new event type | `events.py`: one event class. `domain.py`: one `NotificationType` member. `rules.py`: one rule class and one line in `default_rules()`. `simulation.py`: one trigger method (in production the platform already emits the event). One test. | `service.py`, `bus.py`, `ports.py`, `memory.py`, `channels.py`, `bootstrap.py` and every existing rule. |
+| An event that notifies more than one player | For a second, fixed recipient, such as both players in a new friendship: one more rule for the same event class and one line in `default_rules()` (AD9). For many recipients, such as all of a player's followers: `recipient_id` on the rule becomes a list, and `service.py` loops over it. | The first case leaves `service.py`, `bus.py` and every existing rule untouched. The second touches the rule interface and the service, and nothing else. |
 | A new category | `domain.py`: one `Category` member, and the types that belong to it point at it. | Everything else. Preferences key on `Category`, and the default of enabled applies (A18). |
 | A new channel, such as email or push | One new class that implements `NotificationChannel`. `bootstrap.py`: one line adds it to the list. If players choose channels per category, `PreferenceStore.is_enabled` gains a channel argument and `service.py` checks it inside the send loop. | Events, rules, bus, lookups and `InAppChannel`. |
 | PvP events (D4) | The new-event-type steps, twice: `PlayerAttacked` and `PlayerDefeated`, types `PVP_ATTACKED` and `PVP_DEFEATED` under `GAME_EVENTS` (A17), two rules, two triggers on `GameEngine`. | The same as for a new event type. Throttling repeated attacks (A15) would wrap the rule and is not designed here. |
@@ -285,12 +298,12 @@ None of these is built. Each row is the answer to "what would it take".
 
 ## 9. Open decisions
 
-Recommendations only. Each one waits for confirmation.
+**CONFIRMED (v1.1).** I approved every recommendation below.
 
 | ID | Recommendation | Reason |
 |---|---|---|
 | D1 | Python 3.13, pinned as the `python:3.13-slim` image. | A current, stable release with a small official image. The code needs nothing newer than 3.10, so it also runs on a local 3.11 during development. |
-| D2 (commands) | Build: `docker build -t notification-system .`<br>Run the demo: `docker run --rm notification-system`<br>Run the tests: `docker run --rm notification-system python -m unittest discover -s tests -v`<br>Each is also wrapped in a one-line `build`, `run` and `test` script, as `.sh` and `.cmd`. | Plain `docker` commands work on every system that has Docker (A29). The wrappers are the build scripts R8 asks for. |
+| D2 (commands) | Build: `docker build -t notification-system .`<br>Run the demo: `docker run --rm notification-system`<br>Run the tests: `docker run --rm notification-system python -m unittest discover -s tests -v`<br>Each is also wrapped in a one-line `build`, `run` and `test` script, as `.sh` and `.cmd`. | Plain `docker` commands work on every system that has Docker (A29). The wrappers are the build scripts R8 asks for. Without Docker, `python -m notification_system` runs the demo on Python 3.10 or later (AD11). |
 | D3 | `unittest` from the standard library. Tests run with their own command, not during the build. | Nothing to install, so the build cannot fail on a package download. Keeping tests out of the build keeps it fast and keeps the two results separate. |
 | D4 | (a) Leave PvP out today and say so in the README. Move to (b) only if every MUST is done with time to spare. | R2 and the deadline. Section 8 shows that PvP is two events, two types and two rules with the core untouched, which is the answer the interview asks for. |
 | D5 | (c) Both: a console demo as the default `docker run`, and tests that fire the same triggers. Add (d), a sample run in the README, if time allows. | The demo shows each trigger next to the system's response (R43). The tests prove the same behaviour. |
