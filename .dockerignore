@@ -1,0 +1,9 @@
+.git
+.gitignore
+.gitattributes
+docs
+README.md
+*.sh
+*.cmd
+**/__pycache__
+**/*.pyc

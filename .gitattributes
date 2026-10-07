@@ -1,0 +1,8 @@
+# AD11: the project is written on Windows and run on a reviewer's machine.
+* text=auto
+
+# Shell scripts must keep Unix line endings, or they fail on Linux and macOS.
+*.sh text eol=lf
+
+# Windows command scripts keep Windows line endings.
+*.cmd text eol=crlf
