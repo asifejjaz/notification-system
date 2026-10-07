@@ -1,8 +1,14 @@
 # Requirements analysis: real-time notification system
 
-**Status: PROPOSED (2026-10-01).** Nothing here is confirmed yet. Assumptions A1 to A29 and decisions D1 to D8 are waiting for confirmation, and no design or code should rely on them until this line reads CONFIRMED. Three assumptions are worth raising with the hiring contact first: A1, A3 and A4.
+**Version 1.0. Status: PROPOSED (2026-10-01).** Nothing here is confirmed yet. Assumptions A1 to A29 and decisions D1 to D8 are waiting for confirmation, and no design or code should rely on them until this line reads CONFIRMED. Three assumptions are worth raising with the hiring contact first: A1, A3 and A4.
 
 Source: the challenge brief, *Coding Challenge: Real-Time Notification System for a Gaming Platform* (PDF, 3 pages). This is requirements analysis only. It proposes no architecture and chooses nothing.
+
+## Version history
+
+| Version | Date | What changed |
+|---|---|---|
+| 1.0 | 2026-10-01 | The analysis as the AI proposed it from prompt v2. Nothing is confirmed. |
 
 ## How to read this document
 
