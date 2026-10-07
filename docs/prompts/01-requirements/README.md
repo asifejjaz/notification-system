@@ -13,6 +13,7 @@
 |---|---|---|
 | [v1](prompt-v1.md) | Not run | My first draft. |
 | [v2](prompt-v2.md) | Run | Rewritten by the planning session after it reviewed v1 against the brief. Run as written. |
+| [v3](prompt-v3.md) | Run | My own decisions after reviewing the proposed requirements, in my words. Run in the planning session, which applied them to `docs/requirements.md`. |
 
 ## What changed in v2, and why
 
@@ -27,9 +28,22 @@ I asked the planning session whether v1 was good enough to extract the requireme
 
 v2 also adds a coverage check: every sentence in the brief that sets an expectation must map to an ID.
 
-## Result
+## Result of v2: version 1.0
 
-- Output: [docs/requirements.md](../../requirements.md), status PROPOSED. It has 46 requirements, 29 assumptions, 8 open decisions and 6 out-of-scope items.
+- Output: [docs/requirements.md](../../requirements.md) version 1.0, status PROPOSED. It has 46 requirements, 29 assumptions, 8 open decisions and 6 out-of-scope items.
 - The result came from the v2 prompt alone. I sent no follow-up messages.
-- Three assumptions are flagged as worth raising with the hiring contact: A1 (the `Notification` class is not attached), A3 (no language is named) and A4 (no deadline or submission step).
-- Next: I review the assumptions and decisions. The confirmed version is a separate commit, so the diff shows what I changed.
+- Three assumptions were flagged as worth raising with the hiring contact: A1 (the `Notification` class is not attached), A3 (no language is named) and A4 (no deadline or submission step).
+
+## My review, and version 1.1
+
+I asked the planning session to review version 1.0. It checked every quote against the brief, found no errors and suggested six revisions. Prompt v3 is my own list of decisions after that review. It settles seven assumptions:
+
+- **A1:** assume a basic `Notification` class.
+- **A2:** the HR contact is the email address that sent me the challenge.
+- **A3:** Python, run in Docker, with Docker as the only prerequisite. This also decides D1 and D2 and changes A29.
+- **A4:** the deadline is 7 October 2026 at 8 pm.
+- **A7:** the brief's dispatch order is binding unless a better design is suggested. The planning session suggested checking preferences before creating the `Notification` object. That is PROPOSED for the design step.
+- **A10:** an `Item` class carries an attribute for how rare, valuable or important the item is.
+- **A11:** each item has a short name and a description.
+
+Versions 1.0 and 1.1 are separate commits, so the diff between them shows exactly what I changed. Every assumption and decision that version 1.1 does not mark is still PROPOSED.
