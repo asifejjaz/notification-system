@@ -8,7 +8,7 @@
 
 | Prompt | Status | Notes |
 |---|---|---|
-| [v1.0](prompt-v1.0.md) | Not run yet | Written by the planning session at my request, from `docs/architecture.md` version 1.1. This is the prompt for the build session. |
+| [v1.0](prompt-v1.0.md) | Run | Written by the planning session at my request, from `docs/architecture.md` version 1.1. Run in the build session. |
 
 ## What the prompt does
 
@@ -20,4 +20,18 @@
 
 ## Result
 
-Not run yet.
+- The build session wrote the code in six commits, in the order the prompt set: core, adapters and wiring, demo, tests, Docker and scripts, README.
+- Output: the `notification_system` package, 23 tests, the Dockerfile, the build, run and test scripts, and the root [README.md](../../../README.md).
+
+## My review
+
+I asked the planning session to review the implementation against the architecture. It read the code and ran it independently of the build session's report:
+
+- 23 tests passed on local Python 3.11 and inside the container on Python 3.13.
+- The image built, and the demo output matched the README.
+- Every approval and every review change from step 02 was implemented and tested.
+
+It found two things in the code. I acted on one:
+
+- **Added:** a compile step. The brief says the product must compile and run, so the Dockerfile now compiles every module and the build fails on a syntax error. The planning session made this change and ran the build, the tests and the demo again.
+- **Left as it is:** if one event has two rules and the first one fails, the second does not run. No event has two rules today, so I noted it and did not change it.

@@ -1,6 +1,6 @@
 # Step 03: Implementation (prompt v1.0)
 
-**Status:** written by the planning session at my request. Not run yet. The [step README](README.md) has the details.
+**Status:** written by the planning session at my request. Run in the build session on 2026-10-07. The [step README](README.md) has the result.
 
 ```text
 This is step 03: implementation. Steps 01 and 02 are done and confirmed.
