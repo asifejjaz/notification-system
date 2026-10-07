@@ -9,7 +9,8 @@
 | Prompt | Status | Notes |
 |---|---|---|
 | [v1.1](prompt-v1.1.md) | Not run in the build session | My request to the planning session, in my words. It says what the architecture prompt must cover: entities, interactions, attributes and a database schema. |
-| [v1.2](prompt-v1.2.md) | Not run yet | Written by the planning session from v1.1. This is the prompt for the build session. |
+| [v1.2](prompt-v1.2.md) | Run | Written by the planning session from v1.1. Run in the build session. |
+| [v1.3](prompt-v1.3.md) | Run | My approvals and the planning session's four changes, written up by the planning session and applied by it to `docs/architecture.md`. |
 
 There is no v1.0. I numbered my request v1.1 and the generated prompt v1.2.
 
@@ -25,6 +26,17 @@ v1.2 keeps everything I asked for in v1.1: the main entities, the interactions b
 6. **Diagrams, open decisions and traceability.** Mermaid diagrams that render on GitHub, a recommendation for each open decision, and a table from requirements to components.
 7. **An output file and a stopping point.** The result is saved as `docs/architecture.md`, marked PROPOSED, and the agent stops before code.
 
-## Result
+## Result of v1.2: version 1.0
 
-Not run yet.
+- Output: [docs/architecture.md](../../architecture.md) version 1.0, status PROPOSED.
+- It chose an event bus with one rule per event type, interfaces with in-memory implementations, and one place that wires everything.
+- It kept the game, the queue and the database as extension points and documented the database schema.
+
+## My review, and version 1.1
+
+I asked the planning session to review version 1.0. It judged the design sound, listed eleven decisions that needed my approval, and suggested four changes. I approved all eleven and accepted the four changes. Prompt v1.3 records both:
+
+- **Approved:** no game, queue or database in the build; preferences checked before the `Notification` is created; one rarity scale for items; the brief's trigger names; Python 3.13 in Docker; `unittest` with the standard library only; a console demo plus tests; PvP left out.
+- **Changed:** several rules per event type (AD9), failure isolation in the bus and the channels (AD10), scripts that work on a reviewer's machine (AD11), and a plain statement that `game_id` is not built.
+
+Versions 1.0 and 1.1 are separate commits, so the diff between them shows exactly what changed.
